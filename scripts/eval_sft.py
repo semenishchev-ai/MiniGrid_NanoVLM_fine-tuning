@@ -60,10 +60,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--base", default="configs/base.yaml")
     p.add_argument("--config", default="configs/sft.yaml")
-    p.add_argument("--checkpoint", default=None, help="Путь к .pt. Если не задан — берём cfg.sft.output_dir/ckpt_name")
+    p.add_argument("--checkpoint", default=None)
     p.add_argument("--episodes", type=int, default=None)
     p.add_argument("--seed-start", type=int, default=None)
-    p.add_argument("--out", default=None, help="Куда сохранить json с метриками")
+    p.add_argument("--env", default=None, help="Переопределить env.name из конфига")
+    p.add_argument("--max-steps", type=int, default=None, help="Переопределить env.max_steps")
+    p.add_argument("--out", default=None)
     args = p.parse_args()
 
     cfg = merge_configs(args.base, args.config)
@@ -73,7 +75,6 @@ def main():
         hf_repo=cfg["model"]["hf_repo"],
         device=cfg["device"],
     )
-
     ckpt_path = args.checkpoint or str(Path(cfg["sft"]["output_dir"]) / cfg["sft"]["ckpt_name"])
     if Path(ckpt_path).is_file():
         print(f"loading checkpoint: {ckpt_path}")
@@ -82,18 +83,28 @@ def main():
     else:
         print(f"checkpoint not found: {ckpt_path} — оцениваем базовую модель")
 
+    env_name = args.env or cfg["env"]["name"]
+    max_steps = args.max_steps if args.max_steps is not None else cfg["env"]["max_steps"]
+
     metrics = evaluate_policy(
         model, tokenizer, image_processor, device,
-        env_name=cfg["env"]["name"],
-        max_steps=cfg["env"]["max_steps"],
+        env_name=env_name,
+        max_steps=max_steps,
         num_episodes=args.episodes or cfg["sft"].get("eval_episodes", 20),
         seed_start=args.seed_start if args.seed_start is not None
                    else cfg["sft"].get("eval_seed_start", 10_000),
         prompt=cfg["model"]["prompt"],
     )
+    metrics["env_name"] = env_name
+    metrics["max_steps"] = max_steps
     print(json.dumps(metrics, indent=2))
 
-    out_path = args.out or str(Path(ensure_dir(cfg["results"]["dir"])) / "sft_eval.json")
+    if args.out:
+        out_path = args.out
+    else:
+        # уникальное имя по env, чтобы не перезаписывать sft_eval.json
+        safe = env_name.replace("/", "_")
+        out_path = str(Path(ensure_dir(cfg["results"]["dir"])) / f"sft_eval_{safe}.json")
     Path(out_path).write_text(json.dumps(metrics, indent=2))
     print(f"saved: {out_path}")
 

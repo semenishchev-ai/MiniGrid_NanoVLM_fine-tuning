@@ -1,5 +1,6 @@
 import torch
 from PIL import Image
+
 from src.env import MiniGridWrapper, NAME_TO_ACTION
 from src.dataset import DEFAULT_PROMPT
 from src.model import decode_action
@@ -15,14 +16,11 @@ def rollout_episode(
     enc = tokenizer(prompt_text, return_tensors="pt").to(device)
     input_ids = enc["input_ids"]
     attention_mask = enc["attention_mask"]
-
     total_reward = 0.0
     steps = 0
     success = False
     last_action_name = None
     action_counts = {"left": 0, "right": 0, "forward": 0, "other": 0}
-    first_tokens_dbg = []
-
     while True:
         image = Image.fromarray(obs).convert("RGB")
         px = image_processor(image).unsqueeze(0).to(device)
@@ -34,11 +32,6 @@ def rollout_episode(
         action_name = decode_action(tokenizer, new_tokens)
         last_action_name = action_name
         action = NAME_TO_ACTION.get(action_name)
-
-        if debug and steps < 5:
-            raw = tokenizer.decode(new_tokens, skip_special_tokens=False)
-            first_tokens_dbg.append((new_tokens.tolist(), raw, action_name))
-
         if action is None:
             action_counts["other"] += 1
             break
@@ -51,14 +44,11 @@ def rollout_episode(
             break
         if truncated:
             break
-
-    result = {
+    return {
         "success": success, "return": total_reward, "length": steps,
         "last_action": last_action_name, "action_counts": action_counts,
     }
-    if debug:
-        result["debug_first_tokens"] = first_tokens_dbg
-    return result
+
 
 @torch.no_grad()
 def evaluate_policy(
@@ -79,13 +69,14 @@ def evaluate_policy(
                 prompt=prompt, seed=seed_start + i
             )
             successes += int(r["success"])
-            returns.append(r["return"]); lengths.append(r["length"])
+            returns.append(r["return"])
+            lengths.append(r["length"])
             for k, v in r["action_counts"].items():
                 total_counts[k] += v
     finally:
         env.close()
-        if was_training: model.train()
-
+        if was_training:
+            model.train()
     n = max(1, len(returns))
     metrics = {
         "success_rate": successes / n,
@@ -93,7 +84,31 @@ def evaluate_policy(
         "mean_length": sum(lengths) / n,
         "num_episodes": len(returns),
         "action_counts": total_counts,
+        "env_name": env_name,
     }
     if verbose:
-        print(f"  action distribution: {total_counts}")
+        print(f"  [{env_name}] action distribution: {total_counts}")
     return metrics
+
+
+@torch.no_grad()
+def evaluate_policy_multi(
+    model, tokenizer, image_processor, device,
+    env_specs,
+    prompt=DEFAULT_PROMPT, verbose=True,
+):
+    """env_specs: список dict {name, max_steps, num_episodes, seed_start}.
+    Возвращает dict env_name -> metrics."""
+    out = {}
+    for spec in env_specs:
+        m = evaluate_policy(
+            model, tokenizer, image_processor, device,
+            env_name=spec["name"],
+            max_steps=spec.get("max_steps", 50),
+            num_episodes=spec.get("num_episodes", 20),
+            seed_start=spec.get("seed_start", 10_000),
+            prompt=prompt,
+            verbose=verbose,
+        )
+        out[spec["name"]] = m
+    return out

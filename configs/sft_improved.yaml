@@ -1,0 +1,30 @@
+sft:
+  lr: 2.0e-5
+  batch_size: 16
+  epochs: 10
+  warmup_steps: 50
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  grad_accum_steps: 1
+  max_length: 128
+  num_workers: 2
+  log_every: 1000
+  eval_every_epoch: true
+  save_best: true
+  output_dir: checkpoints/sft_improved
+  ckpt_name: sft_improved_best.pt
+  history_name: sft_improved_history.json
+  eval_envs:
+    - name: MiniGrid-Empty-Random-6x6-v0
+      max_steps: 20
+      num_episodes: 20
+      seed_start: 10000
+    - name: MiniGrid-Empty-8x8-v0
+      max_steps: 50
+      num_episodes: 10
+      seed_start: 10000
+  primary_eval_env: MiniGrid-Empty-8x8-v0
+  balance_actions: true
+  augment: true
+  random_erasing: true
+  early_stop_patience: 999

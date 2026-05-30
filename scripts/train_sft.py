@@ -7,18 +7,17 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import torch
-from torch.utils.data import DataLoader
 
 from src.config import merge_configs
 from src.utils import set_seed, ensure_dir
 from src.dataset import MiniGridActionDataset, make_collator
 from src.model import load_vlm
 from src.sft_trainer import train_sft
-from src.evaluate import evaluate_policy
+from src.evaluate import evaluate_policy_multi
 from src.nanovlm_path import setup_nanovlm_import
 
 setup_nanovlm_import()
-from models.vision_language_model import VisionLanguageModel
+from models.vision_language_model import VisionLanguageModel  # noqa: E402
 
 
 @torch.no_grad()
@@ -60,27 +59,22 @@ VisionLanguageModel.generate = greedy_generate
 
 
 def make_eval_fn(tokenizer, image_processor, cfg, device):
+    env_specs = cfg["sft"]["eval_envs"]
+
     def _fn(model):
-        metrics = evaluate_policy(
+        return evaluate_policy_multi(
             model, tokenizer, image_processor, device,
-            env_name=cfg["env"]["name"],
-            max_steps=cfg["env"]["max_steps"],
-            num_episodes=cfg["sft"].get("eval_episodes", 20),
-            seed_start=cfg["sft"].get("eval_seed_start", 10_000),
+            env_specs=env_specs,
             prompt=cfg["model"]["prompt"],
         )
-        print(f"  eval: success_rate={metrics['success_rate']:.3f} "
-              f"return={metrics['mean_return']:.3f} "
-              f"length={metrics['mean_length']:.2f}")
-        return metrics
     return _fn
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--base", default="configs/base.yaml")
-    p.add_argument("--config", default="configs/sft.yaml")
-    p.add_argument("--skip-sanity", action="store_true", help="пропустить проверку коллатора")
+    p.add_argument("--config", required=True,
+                   help="например: configs/sft_baseline.yaml или configs/sft_improved.yaml")
     args = p.parse_args()
 
     cfg = merge_configs(args.base, args.config)
@@ -95,22 +89,23 @@ def main():
         data_dir=cfg["data"]["dir"],
         tokenizer=tokenizer,
         image_processor=image_processor,
+        augment=cfg["sft"].get("augment", False),
+        random_erasing=cfg["sft"].get("random_erasing", False),
     )
+    print(f"[data] action counts: {dataset.get_action_counts()}")
 
-    collator = make_collator(
-        tokenizer,
-        max_length=cfg["sft"]["max_length"],
-    )
-
+    collator = make_collator(tokenizer, max_length=cfg["sft"]["max_length"])
     ckpt_dir = ensure_dir(cfg["sft"]["output_dir"])
     results_dir = ensure_dir(cfg["results"]["dir"])
 
     eval_fn = make_eval_fn(tokenizer, image_processor, cfg, device)
-
     history = train_sft(model, dataset, collator, eval_fn, cfg, device, ckpt_dir)
 
-    with open(Path(results_dir) / "sft_history.json", "w") as f:
+    history_name = cfg["sft"].get("history_name", "sft_history.json")
+    out_path = Path(results_dir) / history_name
+    with open(out_path, "w") as f:
         json.dump(history, f, indent=2)
+    print(f"saved history: {out_path}")
 
 
 if __name__ == "__main__":
