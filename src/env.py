@@ -7,7 +7,7 @@ ACTION_NAMES = ("left", "right", "forward")
 NAME_TO_ACTION = {name: i for i, name in enumerate(ACTION_NAMES)}
 
 
-def make_empty_env(env_name="MiniGrid-Empty-6x6-v0", max_steps=100, tile_size=None):
+def make_empty_env(env_name="MiniGrid-Empty-Random-6x6-v0", max_steps=100, tile_size=None):
     env = gym.make(env_name, max_steps=max_steps)
     if tile_size is None:
         tile_size = env.unwrapped.tile_size
@@ -19,7 +19,7 @@ def make_empty_env(env_name="MiniGrid-Empty-6x6-v0", max_steps=100, tile_size=No
 class MiniGridWrapper:
     def __init__(
         self,
-        env_name="MiniGrid-Empty-6x6-v0",
+        env_name="MiniGrid-Empty-Random-6x6-v0",
         max_steps=100,
         tile_size=None,
     ):
