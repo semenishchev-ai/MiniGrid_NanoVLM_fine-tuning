@@ -1,0 +1,14 @@
+seed: 42
+device: auto
+env:
+  name: MiniGrid-Empty-6x6-v0
+  max_steps: 100
+  render_mode: rgb_array
+data:
+  dir: data
+  num_episodes: 1000
+model:
+  hf_repo: lusxvr/nanoVLM-222M
+  checkpoint_dir: checkpoints
+results:
+  dir: results

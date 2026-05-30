@@ -1,0 +1,12 @@
+torch>=2.0
+torchvision>=0.15
+numpy
+pillow
+transformers>=4.40
+huggingface-hub>=0.20
+safetensors
+gymnasium>=0.29
+minigrid>=2.3
+wandb
+matplotlib
+pyyaml
