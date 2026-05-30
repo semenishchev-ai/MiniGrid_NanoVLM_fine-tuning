@@ -10,5 +10,6 @@ data:
 model:
   hf_repo: lusxvr/nanoVLM-222M
   checkpoint_dir: checkpoints
+  prompt: "What action should the agent take? Choose: left, right, forward."
 results:
   dir: results

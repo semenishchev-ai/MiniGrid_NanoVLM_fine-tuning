@@ -7,15 +7,21 @@
 - GRPO с прямым выводом действия
 - GRPO с выводом текст + действие
 
-## Модель
-NanoVLM-222M: SigLIP vision encoder + SmolLM2-135M language decoder + modality projector.
-
 ## Установка зависимостей
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+git clone --branch v0.1 --depth 1 https://github.com/huggingface/nanoVLM.git external/nanoVLM
 ```
+
+## Модель
+
+Базовая модель: [lusxvr/nanoVLM-222M](https://huggingface.co/lusxvr/nanoVLM-222M) (SigLIP-base + SmolLM2-135M, ветка nanoVLM v0.1). Загрузка: `src/model.py`, функция `load_vlm` — `VisionLanguageModel.from_pretrained` из `external/nanoVLM`.
+
+Предсказание действия — генерация текста через LM head: ответ одно слово (`left` / `right` / `forward`). Промпт: `model.prompt` в `configs/base.yaml`.
+
+Датасет для SFT: `src/dataset.py`, класс `MiniGridActionDataset`. Читает `data/episodes/`, каждый шаг — пара (PNG, имя действия). Формат текста как в nanoVLM VQA: `Question: {prompt} Answer:` + метка `answer`. Батчи: `make_collator` → `ActionCollator` (маска loss только на токенах ответа, логика как `VQACollator` в nanoVLM).
 
 ## Среда и эксперт
 
@@ -28,7 +34,7 @@ pip install -r requirements.txt
 
 ## Данные
 
-Сбор: `python scripts/collect_data.py` (параметры из `configs/base.yaml`: `data.dir`, `data.num_episodes=1000`, `env.*`). Перед сбором каталог `data/episodes` удаляется целиком.
+Сбор: `python scripts/collect_data.py` (параметры из `configs/base.yaml`: `data.dir`, `data.num_episodes=1000`, `env.*`). `data/episodes` перезаписывается полностью.
 
 Эксперт проходит 1000 эпизодов (сиды `seed` … `seed + 999`). Для эпизода `i` создаётся каталог `data/episodes/{i:06d}/`:
 - `{step:04d}.png` — RGB-наблюдение перед шагом `step`;
