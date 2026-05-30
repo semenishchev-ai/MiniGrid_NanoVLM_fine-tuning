@@ -1,10 +1,8 @@
 import json
 from pathlib import Path
-
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-
 from src.env import ACTION_NAMES
 from src.nanovlm_path import setup_nanovlm_import
 
@@ -18,7 +16,7 @@ class MiniGridActionDataset(Dataset):
         if not self.episodes_dir.is_dir():
             raise FileNotFoundError(f"Episodes not found: {self.episodes_dir}")
         self.prompt = prompt or DEFAULT_PROMPT
-        self.samples = self._build_index()
+
         if image_processor is None or tokenizer is None:
             setup_nanovlm_import()
             from data.processors import get_image_processor, get_tokenizer
@@ -31,6 +29,8 @@ class MiniGridActionDataset(Dataset):
         self.tokenizer = tokenizer
         self.image_processor = image_processor
 
+        self.samples = self._build_index()
+
     def _build_index(self):
         samples = []
         for episode_dir in sorted(self.episodes_dir.iterdir()):
@@ -40,8 +40,9 @@ class MiniGridActionDataset(Dataset):
             if not meta_path.is_file():
                 continue
             meta = json.loads(meta_path.read_text())
-            for step in range(meta["num_steps"]):
-                samples.append((episode_dir, step))
+            actions = meta.get("action_names") or [ACTION_NAMES[a] for a in meta["actions"]]
+            for step, action in enumerate(actions):
+                samples.append((episode_dir, step, action))
         if not samples:
             raise ValueError(f"No samples in {self.episodes_dir}")
         return samples
@@ -50,15 +51,11 @@ class MiniGridActionDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        episode_dir, step = self.samples[idx]
-        meta = json.loads((episode_dir / "actions.json").read_text())
+        episode_dir, step, action = self.samples[idx]
         image = Image.open(episode_dir / f"{step:04d}.png").convert("RGB")
-        action = meta["action_names"][step]
-        if action not in ACTION_NAMES:
-            action = ACTION_NAMES[meta["actions"][step]]
         processed_image = self.image_processor(image)
-        answer = action + self.tokenizer.eos_token
         text_data = f"Question: {self.prompt} Answer:"
+        answer = " " + action + self.tokenizer.eos_token
         return {
             "image": processed_image,
             "text_data": text_data,
@@ -70,46 +67,58 @@ class ActionCollator:
     def __init__(self, tokenizer, max_length):
         self.tokenizer = tokenizer
         self.max_length = max_length
+        self.pad_id = tokenizer.pad_token_id
+        if self.pad_id is None:
+            self.pad_id = tokenizer.eos_token_id
 
     def __call__(self, batch):
         images = torch.stack([item["image"] for item in batch])
-        texts = [item["text_data"] for item in batch]
-        answers = [item["answer"] for item in batch]
-        input_sequences = [f"{texts[i]}{answers[i]}" for i in range(len(batch))]
+        prompt_ids_list = []
+        answer_ids_list = []
+        for item in batch:
+            p_ids = self.tokenizer.encode(item["text_data"], add_special_tokens=False)
+            a_ids = self.tokenizer.encode(item["answer"], add_special_tokens=False)
+            prompt_ids_list.append(p_ids)
+            answer_ids_list.append(a_ids)
 
-        encoded = self.tokenizer(
-            input_sequences,
-            padding="max_length",
-            padding_side="left",
-            return_tensors="pt",
-            truncation=True,
-            max_length=self.max_length,
-        )
-        input_ids = encoded["input_ids"]
-        attention_mask = encoded["attention_mask"]
-        labels = input_ids.clone()
-        labels[:, :-1] = input_ids[:, 1:].clone()
-        labels[:, -1] = -100
+        seqs = []
+        labels_seqs = []
+        for p, a in zip(prompt_ids_list, answer_ids_list):
+            full = p + a
+            label = [-100] * len(p) + list(a)
+            if len(full) > self.max_length:
+                cut = len(full) - self.max_length
+                full = full[cut:]
+                label = label[cut:]
+            seqs.append(full)
+            labels_seqs.append(label)
 
-        original_lengths = [len(self.tokenizer.encode(seq)) for seq in input_sequences]
-        for i in range(len(batch)):
-            question_length = len(
-                self.tokenizer.encode(texts[i], add_special_tokens=False)
-            )
-            if original_lengths[i] > self.max_length:
-                labels[i, :] = -100
-                continue
-            first_token_pos = attention_mask[i].nonzero(as_tuple=True)[0][0].item()
-            question_end = first_token_pos + question_length - 1
-            labels[i, :question_end] = -100
+        # right-padding до максимальной длины в батче
+        batch_max = max(len(s) for s in seqs)
+        B = len(batch)
+        input_ids = torch.full((B, batch_max), self.pad_id, dtype=torch.long)
+        attention_mask = torch.zeros((B, batch_max), dtype=torch.long)
+        labels = torch.full((B, batch_max), -100, dtype=torch.long)
+
+        for i, (s, lab) in enumerate(zip(seqs, labels_seqs)):
+            L = len(s)
+            input_ids[i, :L] = torch.tensor(s, dtype=torch.long)
+            attention_mask[i, :L] = 1
+            labels[i, :L] = torch.tensor(lab, dtype=torch.long)
+
+        # shift влево
+        shifted = labels.clone()
+        shifted[:, :-1] = labels[:, 1:]
+        shifted[:, -1] = -100
+        labels = shifted
 
         return {
-            "image": images,
+            "images": images,
             "input_ids": input_ids,
             "attention_mask": attention_mask,
-            "labels": labels,
+            "targets": labels,
         }
 
 
-def make_collator(tokenizer, max_length):
+def make_collator(tokenizer, max_length, shift_labels=False):
     return ActionCollator(tokenizer, max_length)

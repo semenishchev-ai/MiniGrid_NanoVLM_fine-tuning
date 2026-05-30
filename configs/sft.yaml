@@ -1,0 +1,17 @@
+sft:
+  lr: 2.0e-5
+  batch_size: 16
+  epochs: 10
+  warmup_steps: 50
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  grad_accum_steps: 1
+  max_length: 128
+  num_workers: 2
+  log_every: 1000
+  eval_every_epoch: true
+  eval_episodes: 20
+  eval_seed_start: 10000
+  save_best: true
+  output_dir: checkpoints/sft
+  ckpt_name: sft_best.pt

@@ -41,3 +41,35 @@ git clone --branch v0.1 --depth 1 https://github.com/huggingface/nanoVLM.git ext
 - `actions.json` — список действий `actions` (int 0/1/2), дублирование в `action_names`, `num_steps`, `seed`.
 
 Логика сбора: `src/data_collection.py` (`collect_episode`, `collect_dataset`).
+
+## SFT-обучение
+Цикл обучения: `src/sft_trainer.py`, функция `train_sft`. CLI: `python scripts/train_sft.py` (`configs/sft.yaml`).
+
+DataLoader поверх `MiniGridActionDataset` с `ActionCollator`. Оптимизатор AdamW, cosine LR schedule с warmup, gradient clipping, опциональный gradient accumulation. Loss считается моделью через `VisionLanguageModel.forward(input_ids, images, attention_mask, targets)` (cross-entropy на токенах ответа, prompt маскируется `-100`).
+
+`ActionCollator` (`src/dataset.py`): токенизирует prompt и answer раздельно, конкатенирует id, строит labels как `[-100] * len(prompt) + list(answer)`, right-padding до максимальной длины в батче, shift labels влево на 1.
+
+После каждой эпохи — eval через `evaluate_policy` (`src/evaluate.py`): N эпизодов на сидах вне train, greedy generation через пропатченный `VisionLanguageModel.generate` (поддержка `attention_mask` для image + text токенов). Лучший по `success_rate` чекпоинт сохраняется в `checkpoints/sft/sft_best.pt`.
+
+## Результаты SFT
+Конфигурация: 50 эпизодов train, 20 эпизодов eval, 10 эпох, batch=16, lr=2e-5.
+
+| Epoch | Train Loss | Success Rate | Mean Return | Mean Length |
+|------:|-----------:|-------------:|------------:|------------:|
+| 1     | 8.01       | 0.15         | 0.14        | 17.2        |
+| 2     | 0.66       | 0.75         | 0.58        | 8.75        |
+| 3     | 0.19       | 1.00         | 0.78        | 4.85        |
+| 5     | 0.019      | 1.00         | 0.78        | 4.85        |
+| 10    | 2.3e-5     | 1.00         | 0.78        | 4.85        |
+
+Модель достигает success rate 1.0 после 3 эпох и удерживает. Mean length 4.85 близок к оптимуму BFS на 6×6.
+
+Графики: `results/sft_curves.png`.
+
+Запуск:
+```bash
+python scripts/collect_data.py
+python scripts/train_sft.py
+python scripts/eval_sft.py
+python src/plotting
+```
