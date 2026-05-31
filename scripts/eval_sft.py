@@ -59,7 +59,7 @@ VisionLanguageModel.generate = greedy_generate
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--base", default="configs/base.yaml")
-    p.add_argument("--config", default="configs/sft.yaml")
+    p.add_argument("--config", default="configs/sft_baseline.yaml")
     p.add_argument("--checkpoint", default=None)
     p.add_argument("--episodes", type=int, default=None)
     p.add_argument("--seed-start", type=int, default=None)

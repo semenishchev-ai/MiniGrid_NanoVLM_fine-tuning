@@ -1,5 +1,3 @@
-import os
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import argparse
 import json
 import sys
@@ -12,10 +10,8 @@ import torch
 
 from src.config import merge_configs
 from src.utils import set_seed, ensure_dir
-from src.dataset import MiniGridActionDataset, make_collator
 from src.model import load_vlm
-from src.sft_trainer import train_sft
-from src.evaluate import evaluate_policy_multi
+from src.evaluate import evaluate_policy
 from src.nanovlm_path import setup_nanovlm_import
 
 setup_nanovlm_import()
@@ -60,23 +56,16 @@ def greedy_generate(self, input_ids, image, attention_mask=None, max_new_tokens=
 VisionLanguageModel.generate = greedy_generate
 
 
-def make_eval_fn(tokenizer, image_processor, cfg, device):
-    env_specs = cfg["sft"]["eval_envs"]
-
-    def _fn(model):
-        return evaluate_policy_multi(
-            model, tokenizer, image_processor, device,
-            env_specs=env_specs,
-            prompt=cfg["model"]["prompt"],
-        )
-    return _fn
-
-
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--base", default="configs/base.yaml")
-    p.add_argument("--config", required=True,
-                   help="например: configs/sft_baseline.yaml или configs/sft_improved.yaml")
+    p.add_argument("--config", default="configs/grpo_action.yaml")
+    p.add_argument("--checkpoint", default=None)
+    p.add_argument("--episodes", type=int, default=50)
+    p.add_argument("--seed-start", type=int, default=10_000)
+    p.add_argument("--env", default=None)
+    p.add_argument("--max-steps", type=int, default=None)
+    p.add_argument("--out", default=None)
     args = p.parse_args()
 
     cfg = merge_configs(args.base, args.config)
@@ -86,28 +75,41 @@ def main():
         hf_repo=cfg["model"]["hf_repo"],
         device=cfg["device"],
     )
-
-    dataset = MiniGridActionDataset(
-        data_dir=cfg["data"]["dir"],
-        tokenizer=tokenizer,
-        image_processor=image_processor,
-        augment=cfg["sft"].get("augment", False),
-        random_erasing=cfg["sft"].get("random_erasing", False),
+    ckpt_path = args.checkpoint or str(
+        Path(cfg["grpo"]["output_dir"]) / cfg["grpo"]["ckpt_name"]
     )
-    print(f"[data] action counts: {dataset.get_action_counts()}")
+    if Path(ckpt_path).is_file():
+        print(f"loading checkpoint: {ckpt_path}")
+        state = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(state["model"] if "model" in state else state)
+    else:
+        print(f"checkpoint not found: {ckpt_path} — оцениваем базовую модель")
 
-    collator = make_collator(tokenizer, max_length=cfg["sft"]["max_length"])
-    ckpt_dir = ensure_dir(cfg["sft"]["output_dir"])
-    results_dir = ensure_dir(cfg["results"]["dir"])
+    env_name = args.env or cfg["grpo"]["env_name"]
+    max_steps = args.max_steps if args.max_steps is not None else cfg["grpo"]["max_episode_steps"]
 
-    eval_fn = make_eval_fn(tokenizer, image_processor, cfg, device)
-    history = train_sft(model, dataset, collator, eval_fn, cfg, device, ckpt_dir)
+    metrics = evaluate_policy(
+        model, tokenizer, image_processor, device,
+        env_name=env_name,
+        max_steps=max_steps,
+        num_episodes=args.episodes,
+        seed_start=args.seed_start,
+        prompt=cfg["model"]["prompt"],
+    )
+    metrics["env_name"] = env_name
+    metrics["max_steps"] = max_steps
+    print(json.dumps(metrics, indent=2))
 
-    history_name = cfg["sft"].get("history_name", "sft_history.json")
-    out_path = Path(results_dir) / history_name
-    with open(out_path, "w") as f:
-        json.dump(history, f, indent=2)
-    print(f"saved history: {out_path}")
+    if args.out:
+        out_path = args.out
+    else:
+        safe = env_name.replace("/", "_")
+        out_path = str(
+            Path(ensure_dir(cfg["results"]["dir"]))
+            / f"grpo_action_eval_{safe}.json"
+        )
+    Path(out_path).write_text(json.dumps(metrics, indent=2))
+    print(f"saved: {out_path}")
 
 
 if __name__ == "__main__":

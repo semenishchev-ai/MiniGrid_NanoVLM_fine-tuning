@@ -1,0 +1,14 @@
+{
+  "success_rate": 0.0,
+  "mean_return": 0.0,
+  "mean_length": 50.0,
+  "num_episodes": 50,
+  "action_counts": {
+    "left": 2500,
+    "right": 0,
+    "forward": 0,
+    "other": 0
+  },
+  "env_name": "MiniGrid-Empty-8x8-v0",
+  "max_steps": 50
+}

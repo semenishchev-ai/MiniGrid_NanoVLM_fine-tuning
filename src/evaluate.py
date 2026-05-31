@@ -9,7 +9,7 @@ from src.model import decode_action
 @torch.no_grad()
 def rollout_episode(
     model, tokenizer, image_processor, env, device,
-    prompt=DEFAULT_PROMPT, max_new_tokens=2, seed=None, debug=False,
+    prompt=DEFAULT_PROMPT, max_new_tokens=5, seed=None, debug=False,
 ):
     obs, _ = env.reset(seed=seed)
     prompt_text = f"Question: {prompt} Answer:"

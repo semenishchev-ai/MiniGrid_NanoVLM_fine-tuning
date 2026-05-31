@@ -1,0 +1,332 @@
+[
+  {
+    "epoch": 1,
+    "train_loss": 8.606913634708949,
+    "global_step": 14,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 20.0,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 400,
+          "right": 0,
+          "forward": 0,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 500,
+          "right": 0,
+          "forward": 0,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 2,
+    "train_loss": 1.078544944524765,
+    "global_step": 28,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 0.25,
+        "mean_return": 0.21174999999999997,
+        "mean_length": 15.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 277,
+          "right": 1,
+          "forward": 39,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 10,
+          "right": 0,
+          "forward": 490,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 3,
+    "train_loss": 0.354982852935791,
+    "global_step": 42,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 0.3,
+        "mean_return": 0.2685,
+        "mean_length": 14.7,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 192,
+          "right": 81,
+          "forward": 21,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 500,
+          "right": 0,
+          "forward": 0,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 4,
+    "train_loss": 0.2627633921802044,
+    "global_step": 56,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 0.2,
+        "mean_return": 0.1865,
+        "mean_length": 16.3,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 177,
+          "right": 140,
+          "forward": 9,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 250,
+          "right": 250,
+          "forward": 0,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 5,
+    "train_loss": 0.22304873155163868,
+    "global_step": 70,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7817500000000003,
+        "mean_length": 4.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 17,
+          "right": 12,
+          "forward": 68,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 0,
+          "right": 10,
+          "forward": 490,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 6,
+    "train_loss": 0.12581178422884218,
+    "global_step": 84,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7817500000000003,
+        "mean_length": 4.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 17,
+          "right": 12,
+          "forward": 68,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 240,
+          "right": 250,
+          "forward": 10,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 7,
+    "train_loss": 0.05843090865528211,
+    "global_step": 98,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7817500000000003,
+        "mean_length": 4.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 17,
+          "right": 12,
+          "forward": 68,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 50.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 250,
+          "right": 250,
+          "forward": 0,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 8,
+    "train_loss": 0.030588589639851956,
+    "global_step": 112,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7817500000000003,
+        "mean_length": 4.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 17,
+          "right": 12,
+          "forward": 68,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.8019999999999998,
+        "mean_length": 11.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 0,
+          "right": 10,
+          "forward": 100,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 9,
+    "train_loss": 0.0023710430676666355,
+    "global_step": 126,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7817500000000003,
+        "mean_length": 4.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 17,
+          "right": 12,
+          "forward": 68,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.8019999999999998,
+        "mean_length": 11.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 0,
+          "right": 10,
+          "forward": 100,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  {
+    "epoch": 10,
+    "train_loss": 0.028862736371853055,
+    "global_step": 140,
+    "eval": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7817500000000003,
+        "mean_length": 4.85,
+        "num_episodes": 20,
+        "action_counts": {
+          "left": 17,
+          "right": 12,
+          "forward": 68,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.8019999999999998,
+        "mean_length": 11.0,
+        "num_episodes": 10,
+        "action_counts": {
+          "left": 0,
+          "right": 10,
+          "forward": 100,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  }
+]
