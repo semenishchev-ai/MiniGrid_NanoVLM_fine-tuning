@@ -1,0 +1,182 @@
+{
+  "zero_shot": {
+    "mode": "action",
+    "prompt": "What action should the agent take? Choose: left, right, forward. Answer:",
+    "results": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 0.44,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 12,
+          "right": 7,
+          "forward": 3,
+          "other": 50
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 0.38,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 12,
+          "right": 2,
+          "forward": 5,
+          "other": 50
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  "sft_baseline": {
+    "mode": "action",
+    "prompt": "What action should the agent take? Choose: left, right, forward. Answer:",
+    "results": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7362999999999998,
+        "mean_length": 5.86,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 98,
+          "right": 30,
+          "forward": 165,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.0,
+        "mean_return": 0.0,
+        "mean_length": 47.88,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 2097,
+          "right": 74,
+          "forward": 223,
+          "other": 4
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  "sft_improved": {
+    "mode": "action",
+    "prompt": "What action should the agent take? Choose: left, right, forward. Answer:",
+    "results": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7686999999999997,
+        "mean_length": 5.14,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 46,
+          "right": 46,
+          "forward": 165,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.8012799999999998,
+        "mean_length": 11.04,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 3,
+          "right": 49,
+          "forward": 500,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  "grpo_action": {
+    "mode": "action",
+    "prompt": "What action should the agent take? Choose: left, right, forward. Answer:",
+    "results": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7686999999999997,
+        "mean_length": 5.14,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 46,
+          "right": 46,
+          "forward": 165,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-Random-6x6-v0"
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.8001999999999997,
+        "mean_length": 11.1,
+        "num_episodes": 50,
+        "action_counts": {
+          "left": 4,
+          "right": 50,
+          "forward": 501,
+          "other": 0
+        },
+        "env_name": "MiniGrid-Empty-8x8-v0"
+      }
+    }
+  },
+  "grpo_text_v1": {
+    "mode": "text",
+    "prompt": "Describe what you see, then choose action: left, right, forward.",
+    "results": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 1.0,
+        "mean_return": 0.7596999999999997,
+        "mean_length": 5.34,
+        "parse_fail_rate": 0.00749063670411985,
+        "mean_gen_tokens": 2.299625468164794,
+        "num_episodes": 50,
+        "env_name": "MiniGrid-Empty-Random-6x6-v0",
+        "max_steps": 20
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.98,
+        "mean_return": 0.6945199999999998,
+        "mean_length": 16.86,
+        "parse_fail_rate": 0.018979833926453145,
+        "mean_gen_tokens": 2.2313167259786475,
+        "num_episodes": 50,
+        "env_name": "MiniGrid-Empty-8x8-v0",
+        "max_steps": 50
+      }
+    }
+  },
+  "grpo_text_v2": {
+    "mode": "text",
+    "prompt": "Think step by step about where the goal is, then output action: left, right, forward.",
+    "results": {
+      "MiniGrid-Empty-Random-6x6-v0": {
+        "success_rate": 0.76,
+        "mean_return": 0.3990999999999999,
+        "mean_length": 12.82,
+        "parse_fail_rate": 0.6349453978159126,
+        "mean_gen_tokens": 41.418096723868956,
+        "num_episodes": 50,
+        "env_name": "MiniGrid-Empty-Random-6x6-v0",
+        "max_steps": 20
+      },
+      "MiniGrid-Empty-8x8-v0": {
+        "success_rate": 0.48,
+        "mean_return": 0.22331999999999994,
+        "mean_length": 40.26,
+        "parse_fail_rate": 0.6249379036264282,
+        "mean_gen_tokens": 39.256333830104325,
+        "num_episodes": 50,
+        "env_name": "MiniGrid-Empty-8x8-v0",
+        "max_steps": 50
+      }
+    }
+  }
+}

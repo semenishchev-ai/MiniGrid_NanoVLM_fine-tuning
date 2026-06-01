@@ -1,0 +1,33 @@
+grpo:
+  prompt: "Think step by step about where the goal is, then output action: left, right, forward."
+  num_iterations: 30
+  verbose_every: 5
+  group_size: 8
+  inner_epochs: 2
+  lr: 5.0e-7
+  weight_decay: 0.0
+  kl_beta: 0.1
+  ent_beta: 0.0
+  temperature: 1.2 
+  clip_eps: 0.2
+  max_grad_norm: 1.0
+  max_episode_steps: 20
+  max_new_tokens: 48
+  env_name: MiniGrid-Empty-Random-6x6-v0
+  rollout_seed_start: 0
+  eval_every_iterations: 1
+  save_best: true
+  eval_envs:
+    - name: MiniGrid-Empty-Random-6x6-v0
+      max_steps: 20
+      num_episodes: 20
+      seed_start: 10000
+    - name: MiniGrid-Empty-8x8-v0
+      max_steps: 50
+      num_episodes: 10
+      seed_start: 10000
+  primary_eval_env: MiniGrid-Empty-Random-6x6-v0
+  output_dir: checkpoints/grpo_text_v2
+  ckpt_name: grpo_text_v2_best.pt
+  history_name: grpo_text_v2_history.json
+  sft_checkpoint: checkpoints/sft_improved/sft_improved_best.pt

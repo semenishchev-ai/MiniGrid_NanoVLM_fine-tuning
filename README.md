@@ -5,7 +5,7 @@
 ## Методы
 - **SFT** на парах (image, action) от экспертной политики: baseline + improved (балансировка действий, аугментации)
 - **GRPO** с прямым выводом действия
-- **GRPO** с выводом текст+ действие
+- **GRPO** с выводом текст + действие
 
 ## Структура репозитория
 ```
@@ -156,13 +156,123 @@ GRPO **сохранил качество SFT improved на обеих среда
 - **Восстановление.** К iter 13 политика вернулась к SFT-режиму (SR=1.0 на обеих средах). KL-штраф к референсу удерживает политику в окрестности SFT.
 - **Для слабого baseline'а GRPO имел бы больший потенциал.** SFT improved уже решает задачу — RL только стабилизирует, но не улучшает.
 
-## Сравнение SFT vs GRPO (финальный eval, 50 эпизодов)
+## GRPO text+action
 
-| Метод | 6×6 SR | 6×6 len | 8×8 SR | 8×8 len |
-|---|---:|---:|---:|---:|
-| SFT baseline   | 1.00 | 4.92 | 0.00 | 50.0 |
-| SFT improved   | 1.00 | 4.84 | 1.00 | 11.0 |
-| GRPO action    | 1.00 | 4.80 | 1.00 | 11.0 |
+Расширение GRPO: модель сначала генерирует свободный текст (reasoning), затем извлекаем действие парсингом последнего вхождения слова `left`/`right`/`forward`. Мотивация: проверить, может ли RL без supervision на формат вывода научить модель полезному chain-of-thought.
+
+### Реализация
+
+- `src/rollout_text.py` — отдельный модуль для text-режима:
+  - `sample_episode_text` — токен-за-токеном генерация (`_generate_step`) с sampling и температурой до `max_new_tokens` или EOS, сохранение `gen_texts` для verbose-логирования.
+  - `parse_last_action` — извлечение действия по последнему вхождению `left`/`right`/`forward` в сгенерированном тексте. При неудаче — fallback на `forward` + инкремент `parse_fails`.
+  - `compute_log_probs_text` — log p всех сгенерированных токенов и entropy по словарю; общая функция `_forward_logits_grad` поддерживает оба режима (с/без градиента).
+- `src/grpo_text_trainer.py`, функция `train_grpo_text` — отдельный трейнер для text-варианта. Отличия от action-only:
+  - переменное число сгенерированных токенов на шаг (отдельный backward на каждом шаге эпизода);
+  - per-token PPO clip loss + KL к референсу + опциональный entropy bonus;
+  - доп. метрики в history: `parse_fail_rate`, `mean_gen_tokens`, `entropy`;
+  - `verbose_every` для печати примеров генерации (action + текст).
+- `scripts/train_grpo_text.py` — точка входа, выбор конфига через `--config`.
+
+### Эксперименты
+
+Два варианта с разными промптами, идентичные гиперпараметры (старт от `sft_improved_best.pt`):
+
+| Вариант | Промпт |
+|---|---|
+| **v1** | `"Describe what you see, then choose action: left, right, forward."` |
+| **v2** | `"Think step by step about where the goal is, then output action: left, right, forward."` |
+
+Идея v1 - описание состояния в свободной форме.
+Идея v2 - описание цели и её пошаговое достижение (более строгий промпт).
+
+Гиперпараметры (`configs/grpo_text_v1.yaml`, `grpo_text_v2.yaml`):
+- `num_iterations: 30`, `group_size: 8`, `inner_epochs: 2`
+- `lr: 5e-7`, `kl_beta: 0.1`, `clip_eps: 0.2`, `max_grad_norm: 1.0`
+- `temperature: 1.2` (выше чем в action-only — для exploration в формате текста)
+- `ent_beta: 0.0` (см. ниже)
+- `max_new_tokens: 48`
+
+### Подбор `ent_beta`
+
+Изначально пробовалось `ent_beta=0.01` для поощрения разнообразия генераций. Результат — коллапс за 5 итераций: энтропия выросла с 0.17 до 3.8, `parse_fail_rate` с 0% до 66%, reward с 0.78 до 0.48. Причина: entropy bonus считается по всему словарю (~50K токенов), и сигнал «увеличь энтропию» доминирует над sparse reward задачи. Финальные запуски — без entropy bonus, exploration только через `temperature`.
+
+### Результаты
+
+Финальная оценка best-чекпоинтов (50 эпизодов):
+
+| Вариант | 6×6 SR | 6×6 len | 8×8 SR | 8×8 len | parse_fail | gen_tok |
+|---|---:|---:|---:|---:|---:|---:|
+| **v1** (describe) | 1.00 | 5.34 | 0.98 | 16.86 | 0.7% / 1.9% | 2.3 / 2.2 |
+| **v2** (step-by-step) | 0.76 | 12.82 | 0.48 | 40.26 | 63.5% / 62.5% | 41.4 / 39.3 |
+
+### v1: формально работает, но без reasoning
+
+`mean_gen_tokens=2.2-2.3` — модель сразу выдаёт action-слово, 1-2 токена, без описания сцены. Это и не могло быть иначе: SFT improved обучен на формате «answer одним словом», и GRPO с sparse reward не имеет сигнала сменить формат.
+
+Кривые обучения показывают дрейф длины генерации: на отдельных итерациях модель начинает писать длиннее (до 20-40 токенов), parse_fail растёт до 20-40%, reward падает — затем модель «откатывается» к коротким ответам через KL-штраф. Best-чекпоинт сохраняется на ранних итерациях, когда поведение ближе всего к SFT.
+
+Verbose-семплы из rollout'ов на разных итерациях (`scripts/train_grpo_text.py` + `verbose_every` в конфиге):
+
+```
+iter 10 (короткий режим):
+  step 0: action=forward | gen="forward"
+  step 1: action=forward | gen="forward"
+  step 2: action=right   | gen="right"
+
+iter 15 (дрейф к длинным генерациям):
+  step 0: action=forward | gen="Enter file version sources into the Discuss file version source box."
+  step 1: action=right   | gen="Math_ behaves less well in reverse also because you type it in..."
+  step 2: action=forward | gen="forwardwave tributary NO 12 SHORE WAARDSHIP ONLY REGARDING PM 10..."
+```
+
+Когда модель уходит из «short answer» режима, она генерирует не описания сцены, а случайные фрагменты из претрейн-распределения SmolLM2 — никакой связи с MiniGrid.
+
+### v2: коллапс с первой итерации
+
+Промпт «think step by step» сильно отличается от SFT-формата ответа. С первой же итерации SR на rollout = 0.0 (reward 0.000), модель пишет 2 «случайных» токена которые не парсятся. KL быстро растёт до 1.6+, энтропия до 7.5, parse_fail до 87%. Модель уходит от SFT-инициализации, но не находит политику с положительным reward'ом.
+
+Verbose-семплы:
+
+```
+iter 25 (полный коллапс):
+  step 0: action=forward | gen="Forward direction directed positive fan  Ank password carbs make..."
+  step 1: action=forward | gen="SUit?: droplet onto window area Hill Reach declined buyers..."
+  step 2: action=forward | gen="NE Java ObjectThe obligation(( fastforward"
+  ...
+```
+
+### Кривые обучения
+
+![GRPO text v1](results/plots/grpo_text_v1_curves.png)
+![GRPO text v2](results/plots/grpo_text_v2_curves.png)
+![GRPO text reasoning stats](results/plots/text_reasoning_stats.png)
+
+### Наблюдения
+
+- **RL без SFT-bootstrap не создаёт новый формат вывода.** Sparse reward (1/0 за эпизод) даёт сигнал «правильное действие важно», но не «формат рассуждения важен». Чтобы научить reasoning'у, нужен этап SFT на (image, reasoning_text + action) парах перед GRPO.
+- **Промпт должен быть близок к SFT-формату.** v1 (describe ... then choose) ближе к «What action ... Answer:» из SFT и держит политику в рабочем режиме. v2 («think step by step») слишком далёк → политика разваливается.
+- **KL-штраф недостаточен против сильного prompt-shift.** В v2 `kl_beta=0.1` не удержал политику от ухода в шумовой режим.
+- **Eval часто стабильнее rollout.** В v1 на rollout parse_fail доходил до 40-50%, на eval (с temperature=1.0 вместо 1.2) — оставался 1-2%. Низкая температура «спасает» формат, но не помогает обучению.
+
+## Финальное сравнение всех методов (50 эпизодов на среду)
+
+| Method | Empty-Random-6x6 (in-dist) SR | len | Empty-8x8 (OOD) SR | len |
+|---|---|---|---|---|
+| Zero-shot | 0.00 | 0.4 | 0.00 | 0.4 |
+| SFT baseline | 1.00 | 5.9 | 0.00 | 47.9 |
+| SFT improved | 1.00 | 5.1 | 1.00 | 11.0 |
+| GRPO action | 1.00 | 5.1 | 1.00 | 11.1 |
+| GRPO text (v1: describe) | 1.00 | 5.3 | 0.98 | 16.9 |
+| GRPO text (v2: step-by-step) | 0.76 | 12.8 | 0.48 | 40.3 |
+
+![Final SR](results/plots/final_sr.png)
+![Final length](results/plots/final_length.png)
+
+Ключевые выводы:
+- **SFT improved уже близок к потолку задачи.** GRPO action даёт идентичные метрики — RL без зазора для улучшения только стабилизирует политику.
+- **Zero-shot полностью неработоспособен**: модель не выдаёт `left/right/forward` ни в одном эпизоде (action distribution: 100% "other").
+- **GRPO text v1 сохраняет качество, но не учит reasoning'у** — best-чекпоинт по сути воспроизводит SFT improved.
+- **GRPO text v2 — провальный эксперимент** drift от SFT-формата.
 
 ## Файлы
 - `src/sft_trainer.py` — SFT-трейнер с балансировкой и multi-env eval
@@ -174,6 +284,12 @@ GRPO **сохранил качество SFT improved на обеих среда
 - `configs/sft_baseline.yaml`, `configs/sft_improved.yaml`, `configs/grpo_action.yaml`
 - `results/*.json` — истории и финальные eval'ы
 - `results/sft_comparison.png`, `results/grpo_action_history_curves.png` — графики
+- `src/rollout_text.py` — генерация эпизодов в text-режиме, парсинг действий, log-probs всех токенов
+- `src/grpo_text_trainer.py` — GRPO-трейнер для text+action режима
+- `scripts/train_grpo_text.py`, `scripts/eval_grpo_text.py` — точки входа для text-режима
+- `scripts/eval_all.py`, `scripts/make_plots.py` — финальная сравнительная оценка и сводные графики
+- `configs/grpo_text_v1.yaml`, `configs/grpo_text_v2.yaml`
+- `results/plots/` — итоговые графики и таблица сравнения
 
 ## Воспроизведение
 
@@ -223,6 +339,14 @@ python scripts/eval_grpo_action.py \
     --checkpoint checkpoints/grpo_action/grpo_action_best.pt \
     --env MiniGrid-Empty-8x8-v0 --max-steps 50 --episodes 50
 python src/plotting.py --grpo-history results/grpo_action_history.json
+
+# 5. GRPO text+action (два варианта промпта)
+python scripts/train_grpo_text.py --config configs/grpo_text_v1.yaml
+python scripts/train_grpo_text.py --config configs/grpo_text_v2.yaml
+
+# 6. Финальная сводная оценка всех методов и графики
+python scripts/eval_all.py --out results/eval_all.json
+python scripts/make_plots.py
 ```
 
 Все артефакты сохраняются в `checkpoints/` и `results/`.

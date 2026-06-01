@@ -1,11 +1,11 @@
 {
   "success_rate": 1.0,
-  "mean_return": 0.7839999999999999,
-  "mean_length": 4.8,
+  "mean_return": 0.7821999999999999,
+  "mean_length": 4.84,
   "num_episodes": 50,
   "action_counts": {
-    "left": 44,
-    "right": 35,
+    "left": 47,
+    "right": 34,
     "forward": 161,
     "other": 0
   },

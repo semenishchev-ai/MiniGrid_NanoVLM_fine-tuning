@@ -1,7 +1,7 @@
 [
   {
     "epoch": 1,
-    "train_loss": 8.606913634708949,
+    "train_loss": 8.606914281845093,
     "global_step": 14,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -34,7 +34,7 @@
   },
   {
     "epoch": 2,
-    "train_loss": 1.078544944524765,
+    "train_loss": 1.0785446166992188,
     "global_step": 28,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -67,7 +67,7 @@
   },
   {
     "epoch": 3,
-    "train_loss": 0.354982852935791,
+    "train_loss": 0.3549743177635329,
     "global_step": 42,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -100,7 +100,7 @@
   },
   {
     "epoch": 4,
-    "train_loss": 0.2627633921802044,
+    "train_loss": 0.26308553346565794,
     "global_step": 56,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -133,7 +133,7 @@
   },
   {
     "epoch": 5,
-    "train_loss": 0.22304873155163868,
+    "train_loss": 0.21934297820553184,
     "global_step": 70,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -166,7 +166,7 @@
   },
   {
     "epoch": 6,
-    "train_loss": 0.12581178422884218,
+    "train_loss": 0.11545107067961778,
     "global_step": 84,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -199,7 +199,7 @@
   },
   {
     "epoch": 7,
-    "train_loss": 0.05843090865528211,
+    "train_loss": 0.07487045324939702,
     "global_step": 98,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -232,7 +232,7 @@
   },
   {
     "epoch": 8,
-    "train_loss": 0.030588589639851956,
+    "train_loss": 0.030911323277645612,
     "global_step": 112,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -265,7 +265,7 @@
   },
   {
     "epoch": 9,
-    "train_loss": 0.0023710430676666355,
+    "train_loss": 0.007680057500173072,
     "global_step": 126,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {
@@ -298,7 +298,7 @@
   },
   {
     "epoch": 10,
-    "train_loss": 0.028862736371853055,
+    "train_loss": 0.028093247415069657,
     "global_step": 140,
     "eval": {
       "MiniGrid-Empty-Random-6x6-v0": {

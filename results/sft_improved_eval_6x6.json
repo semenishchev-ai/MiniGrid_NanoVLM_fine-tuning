@@ -1,12 +1,12 @@
 {
   "success_rate": 1.0,
-  "mean_return": 0.7821999999999999,
-  "mean_length": 4.84,
+  "mean_return": 0.7839999999999999,
+  "mean_length": 4.8,
   "num_episodes": 50,
   "action_counts": {
-    "left": 38,
-    "right": 39,
-    "forward": 165,
+    "left": 44,
+    "right": 35,
+    "forward": 161,
     "other": 0
   },
   "env_name": "MiniGrid-Empty-Random-6x6-v0",
